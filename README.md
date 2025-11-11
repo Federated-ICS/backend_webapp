@@ -1,5 +1,10 @@
 # ICS Threat Detection System - Backend
 
+[![CI Pipeline](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/ci.yml)
+[![Quick Check](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/quick-check.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/quick-check.yml)
+[![Security Scan](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/security.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/security.yml)
+[![codecov](https://codecov.io/gh/YOUR_USERNAME/YOUR_REPO/branch/main/graph/badge.svg)](https://codecov.io/gh/YOUR_USERNAME/YOUR_REPO)
+
 FastAPI backend for the Federated Network-Based ICS Threat Detection System. A multi-layered threat detection platform using federated learning, LSTM autoencoders, and graph neural networks to detect and predict ICS/OT network attacks.
 
 ## Overview
@@ -27,32 +32,48 @@ This system provides real-time threat detection and prediction for Industrial Co
 
 ```bash
 # 1. Install dependencies (using Poetry)
-poetry install
+make install
+# or: poetry install
 
 # 2. Set up environment variables
 cp .env.example .env
 # Edit .env with your configuration
 
 # 3. Start PostgreSQL
-docker-compose up -d postgres
+make docker-up
+# or: docker-compose up -d postgres
 
 # 4. Run database migrations
-poetry run alembic upgrade head
+make migrate
+# or: poetry run alembic upgrade head
 
 # 5. Seed database with sample data
-poetry run python scripts/seed_database.py
+make seed
+# or: poetry run python scripts/seed_database.py
 
 # 6. Start the server
-poetry run uvicorn app.main:app --reload --port 8000
+make dev
+# or: poetry run uvicorn app.main:app --reload --port 8000
 ```
 
 Visit http://localhost:8000/docs for interactive API documentation.
 
+### Using Makefile Commands
+
+```bash
+make help          # Show all available commands
+make ci            # Run all CI checks locally
+make test          # Run tests
+make format        # Format code
+make lint          # Check code quality
+```
+
 ## Documentation
 
 - [Quick Start Guide](docs/QUICK_START.md) - Get up and running fast
+- [CI/CD Setup](docs/CI_SETUP.md) - Configure GitHub Actions pipeline
+- [CI/CD Documentation](docs/CI_CD.md) - Detailed CI/CD information
 - [Architecture](docs/ARCHITECTURE.md) - System design and data flows
-- [Docker Setup](docs/DOCKER_SETUP.md) - Infrastructure services
 - [Progress](docs/PROGRESS.md) - Implementation status
 - [TDD Status](docs/TDD_STATUS.md) - Test-driven development progress
 
@@ -341,9 +362,59 @@ poetry cache clear pypi --all
 poetry install --no-cache
 ```
 
+## CI/CD Pipeline
+
+This project uses GitHub Actions for continuous integration and deployment:
+
+### Workflows
+
+**CI Pipeline** (`.github/workflows/ci.yml`)
+- Runs on every push and pull request
+- Executes full test suite with coverage reporting
+- Runs linting (Black, isort, flake8)
+- Performs type checking with mypy
+- Uploads coverage to Codecov
+
+**Quick Check** (`.github/workflows/quick-check.yml`)
+- Fast feedback for API tests
+- Runs on every push and pull request
+- Focuses on API endpoint tests
+
+**Security Scan** (`.github/workflows/security.yml`)
+- Dependency vulnerability scanning
+- Code security analysis with Bandit
+- Runs on push, PR, and weekly schedule
+
+### Running CI Locally
+
+```bash
+# Run all tests like CI does
+poetry run pytest tests/ -v --cov=app --cov-report=term
+
+# Check code formatting
+poetry run black --check app/ tests/
+poetry run isort --check-only app/ tests/
+poetry run flake8 app/ tests/ --max-line-length=100
+
+# Type checking
+poetry run mypy app/ --ignore-missing-imports
+```
+
 ## Contributing
 
 This project follows Test-Driven Development (TDD). See [TDD_STATUS.md](docs/TDD_STATUS.md) for current test coverage and implementation status.
+
+### Pull Request Process
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes and add tests
+4. Ensure all tests pass locally
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+All PRs must pass CI checks before merging.
 
 ## License
 

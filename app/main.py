@@ -1,7 +1,9 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.api import alerts, fl_status, predictions
 from app.config import settings
 
 
@@ -52,9 +54,7 @@ async def root():
     }
 
 
-# Import and include routers
-from app.api import alerts, fl_status, predictions
-
+# Include routers
 app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"])
 app.include_router(fl_status.router, prefix="/api/fl", tags=["fl"])
 app.include_router(predictions.router, prefix="/api/predictions", tags=["predictions"])

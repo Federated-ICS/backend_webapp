@@ -1,19 +1,20 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_
-from sqlalchemy.orm import selectinload
+from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
-from datetime import datetime
 
-from app.models.fl_round import FLRound, FLClient, RoundStatusEnum, PhaseEnum, ClientStatusEnum
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.models.fl_round import ClientStatusEnum, FLClient, FLRound, PhaseEnum, RoundStatusEnum
 
 
 class FLRepository:
     """Repository for Federated Learning database operations"""
-    
+
     def __init__(self, db: AsyncSession):
         self.db = db
-    
+
     async def create_round(self, round_number: int) -> FLRound:
         """Create a new FL round"""
         fl_round = FLRound(
@@ -26,7 +27,7 @@ class FLRepository:
             clients_active=0,
             total_clients=6,
         )
-        
+
         # Create clients for each facility
         facilities = [
             ("facility_a", "Facility A"),
@@ -36,7 +37,7 @@ class FLRepository:
             ("facility_e", "Facility E"),
             ("facility_f", "Facility F"),
         ]
-        
+
         for facility_id, name in facilities:
             client = FLClient(
                 facility_id=facility_id,
@@ -48,23 +49,19 @@ class FLRepository:
                 last_update=datetime.utcnow(),
             )
             fl_round.clients.append(client)
-        
+
         self.db.add(fl_round)
         await self.db.commit()
         await self.db.refresh(fl_round, ["clients"])
-        
+
         return fl_round
-    
+
     async def get_by_id(self, round_id: int) -> Optional[FLRound]:
         """Get FL round by ID with clients"""
-        query = (
-            select(FLRound)
-            .options(selectinload(FLRound.clients))
-            .where(FLRound.id == round_id)
-        )
+        query = select(FLRound).options(selectinload(FLRound.clients)).where(FLRound.id == round_id)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
-    
+
     async def get_by_round_number(self, round_number: int) -> Optional[FLRound]:
         """Get FL round by round number"""
         query = (
@@ -74,7 +71,7 @@ class FLRepository:
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
-    
+
     async def get_current_round(self) -> Optional[FLRound]:
         """Get the current active FL round"""
         query = (
@@ -86,7 +83,7 @@ class FLRepository:
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
-    
+
     async def get_latest_round(self) -> Optional[FLRound]:
         """Get the most recent FL round (active or completed)"""
         query = (
@@ -96,7 +93,7 @@ class FLRepository:
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
-    
+
     async def get_all_rounds(self, limit: int = 10, offset: int = 0) -> List[FLRound]:
         """Get all FL rounds with pagination"""
         query = (
@@ -108,7 +105,7 @@ class FLRepository:
         )
         result = await self.db.execute(query)
         return list(result.scalars().all())
-    
+
     async def update_round_progress(
         self,
         round_id: int,
@@ -119,16 +116,16 @@ class FLRepository:
         fl_round = await self.get_by_id(round_id)
         if not fl_round:
             return None
-        
+
         fl_round.progress = progress
         if phase:
             fl_round.phase = PhaseEnum(phase)
-        
+
         await self.db.commit()
         await self.db.refresh(fl_round, ["clients"])
-        
+
         return fl_round
-    
+
     async def complete_round(
         self,
         round_id: int,
@@ -138,31 +135,31 @@ class FLRepository:
         fl_round = await self.get_by_id(round_id)
         if not fl_round:
             return None
-        
+
         fl_round.status = RoundStatusEnum.completed
         fl_round.phase = PhaseEnum.complete
         fl_round.progress = 100
         fl_round.end_time = datetime.utcnow()
         fl_round.model_accuracy = model_accuracy
-        
+
         await self.db.commit()
         await self.db.refresh(fl_round, ["clients"])
-        
+
         return fl_round
-    
+
     async def get_all_clients(self) -> List[FLClient]:
         """Get all FL clients from current round"""
         current_round = await self.get_current_round()
         if not current_round:
             return []
         return current_round.clients
-    
+
     async def get_client_by_id(self, client_id: UUID) -> Optional[FLClient]:
         """Get FL client by ID"""
         query = select(FLClient).where(FLClient.id == client_id)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
-    
+
     async def update_client_status(
         self,
         client_id: UUID,
@@ -176,7 +173,7 @@ class FLRepository:
         client = await self.get_client_by_id(client_id)
         if not client:
             return None
-        
+
         if status:
             client.status = ClientStatusEnum(status)
         if progress is not None:
@@ -187,14 +184,14 @@ class FLRepository:
             client.loss = loss
         if accuracy is not None:
             client.accuracy = accuracy
-        
+
         client.last_update = datetime.utcnow()
-        
+
         await self.db.commit()
         # No relationships to refresh for client
-        
+
         return client
-    
+
     async def get_next_round_number(self) -> int:
         """Get the next round number"""
         query = select(func.max(FLRound.round_number))

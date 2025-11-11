@@ -1,15 +1,15 @@
 """
 Predictions API endpoints
 """
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.repositories.prediction_repository import PredictionRepository
 from app.schemas.prediction import PredictionCreate, PredictionResponse
-
 
 router = APIRouter()
 
@@ -23,7 +23,7 @@ async def get_predictions(
 ):
     """
     Get all predictions with filtering
-    
+
     Query Parameters:
     - limit: Number of predictions to return (default: 10)
     - offset: Number of predictions to skip (default: 0)
@@ -35,10 +35,8 @@ async def get_predictions(
         offset=offset,
         validated=validated,
     )
-    
-    return {
-        "predictions": [PredictionResponse.model_validate(p) for p in predictions]
-    }
+
+    return {"predictions": [PredictionResponse.model_validate(p) for p in predictions]}
 
 
 @router.post("", response_model=PredictionResponse, status_code=status.HTTP_201_CREATED)
@@ -48,7 +46,7 @@ async def create_prediction(
 ):
     """
     Create a new attack prediction
-    
+
     Body:
     - current_technique: Current MITRE ATT&CK technique ID
     - current_technique_name: Current technique name
@@ -66,15 +64,15 @@ async def get_latest_prediction(
 ):
     """
     Get the most recent prediction
-    
+
     Returns the latest prediction or null if none exists
     """
     repo = PredictionRepository(db)
     prediction = await repo.get_latest()
-    
+
     if not prediction:
         return None
-    
+
     return PredictionResponse.model_validate(prediction)
 
 
@@ -85,19 +83,19 @@ async def get_prediction_by_id(
 ):
     """
     Get a specific prediction by ID
-    
+
     Path Parameters:
     - prediction_id: UUID of the prediction
     """
     repo = PredictionRepository(db)
     prediction = await repo.get_by_id(prediction_id)
-    
+
     if not prediction:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Prediction with id {prediction_id} not found"
+            detail=f"Prediction with id {prediction_id} not found",
         )
-    
+
     return PredictionResponse.model_validate(prediction)
 
 
@@ -108,20 +106,20 @@ async def validate_prediction(
 ):
     """
     Mark a prediction as validated
-    
+
     Path Parameters:
     - prediction_id: UUID of the prediction
-    
+
     This endpoint is called when a predicted attack actually occurs,
     confirming the accuracy of the prediction.
     """
     repo = PredictionRepository(db)
     prediction = await repo.validate_prediction(prediction_id)
-    
+
     if not prediction:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Prediction with id {prediction_id} not found"
+            detail=f"Prediction with id {prediction_id} not found",
         )
-    
+
     return PredictionResponse.model_validate(prediction)

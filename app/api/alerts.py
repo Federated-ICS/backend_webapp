@@ -1,15 +1,15 @@
 """
 Alerts API endpoints
 """
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.database import get_db
 from app.repositories.alert_repository import AlertRepository
-from app.schemas.alert import AlertCreate, AlertResponse, AlertUpdate, AlertStats
-
+from app.schemas.alert import AlertCreate, AlertResponse, AlertStats, AlertUpdate
 
 router = APIRouter()
 
@@ -27,7 +27,7 @@ async def get_alerts(
 ):
     """
     Get all alerts with filtering and pagination
-    
+
     Query Parameters:
     - severity: Filter by severity (critical, high, medium, low, all)
     - facility: Filter by facility ID
@@ -38,7 +38,7 @@ async def get_alerts(
     - limit: Items per page (default: 10)
     """
     repo = AlertRepository(db)
-    
+
     alerts, total = await repo.get_all(
         severity=severity,
         facility=facility,
@@ -48,10 +48,10 @@ async def get_alerts(
         page=page,
         limit=limit,
     )
-    
+
     # Calculate total pages
     pages = (total + limit - 1) // limit if total > 0 else 0
-    
+
     return {
         "alerts": [AlertResponse.model_validate(alert) for alert in alerts],
         "total": total,
@@ -68,7 +68,7 @@ async def create_alert(
 ):
     """
     Create a new alert
-    
+
     Body:
     - facility_id: Facility identifier
     - severity: Alert severity (critical, high, medium, low)
@@ -90,7 +90,7 @@ async def get_alert_stats(
 ):
     """
     Get alert statistics
-    
+
     Returns:
     - total: Total number of alerts
     - critical: Number of critical alerts
@@ -109,19 +109,18 @@ async def get_alert_by_id(
 ):
     """
     Get a specific alert by ID
-    
+
     Path Parameters:
     - alert_id: UUID of the alert
     """
     repo = AlertRepository(db)
     alert = await repo.get_by_id(alert_id)
-    
+
     if not alert:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Alert with id {alert_id} not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Alert with id {alert_id} not found"
         )
-    
+
     return AlertResponse.model_validate(alert)
 
 
@@ -133,20 +132,19 @@ async def update_alert_status(
 ):
     """
     Update alert status
-    
+
     Path Parameters:
     - alert_id: UUID of the alert
-    
+
     Body:
     - status: New status (acknowledged, resolved, false-positive)
     """
     repo = AlertRepository(db)
     alert = await repo.update_status(alert_id, update_data.status)
-    
+
     if not alert:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Alert with id {alert_id} not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Alert with id {alert_id} not found"
         )
-    
+
     return AlertResponse.model_validate(alert)

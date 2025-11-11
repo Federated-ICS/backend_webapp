@@ -1,18 +1,9 @@
-from app.schemas.alert import (
-    AlertResponse,
-    AlertCreate,
-    AlertUpdate,
-    AlertStats,
-)
-from app.schemas.fl_status import (
-    FLRoundResponse,
-    FLClientSchema,
-    PrivacyMetrics,
-)
+from app.schemas.alert import AlertCreate, AlertResponse, AlertStats, AlertUpdate
+from app.schemas.fl_status import FLClientSchema, FLRoundResponse, PrivacyMetrics
 from app.schemas.prediction import (
-    PredictionResponse,
-    PredictionCreate,
     AttackGraphData,
+    PredictionCreate,
+    PredictionResponse,
     TechniqueDetails,
 )
 

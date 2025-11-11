@@ -1,7 +1,8 @@
-from pydantic import BaseModel
-from typing import Optional, List, Literal
 from datetime import datetime
+from typing import List, Literal, Optional
 from uuid import UUID
+
+from pydantic import BaseModel
 
 
 class PredictedTechniqueSchema(BaseModel):

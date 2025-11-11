@@ -1,22 +1,23 @@
 """
 Federated Learning Status API endpoints
 """
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.repositories.fl_repository import FLRepository
-from app.schemas.fl_status import FLRoundResponse, FLClientSchema, PrivacyMetrics
-
+from app.schemas.fl_status import FLClientSchema, FLRoundResponse, PrivacyMetrics
 
 router = APIRouter()
 
 
 class ClientUpdateRequest(BaseModel):
     """Request model for updating client progress"""
+
     status: Optional[str] = None
     progress: Optional[int] = None
     current_epoch: Optional[int] = None
@@ -26,12 +27,14 @@ class ClientUpdateRequest(BaseModel):
 
 class RoundProgressRequest(BaseModel):
     """Request model for updating round progress"""
+
     progress: int
     phase: Optional[str] = None
 
 
 class CompleteRoundRequest(BaseModel):
     """Request model for completing a round"""
+
     model_accuracy: float
 
 
@@ -41,19 +44,19 @@ async def get_current_round(
 ):
     """
     Get the current active FL round
-    
+
     Returns the most recent in-progress round, or null if none exists
     """
     repo = FLRepository(db)
     current_round = await repo.get_current_round()
-    
+
     if not current_round:
         # Try to get the latest round (even if completed)
         latest = await repo.get_latest_round()
         if not latest:
             return None
         return FLRoundResponse.model_validate(latest)
-    
+
     return FLRoundResponse.model_validate(current_round)
 
 
@@ -63,17 +66,17 @@ async def trigger_fl_round(
 ):
     """
     Trigger a new FL round
-    
+
     Creates a new federated learning round with 6 facility clients
     """
     repo = FLRepository(db)
-    
+
     # Get next round number
     next_round_number = await repo.get_next_round_number()
-    
+
     # Create new round
     fl_round = await repo.create_round(next_round_number)
-    
+
     return FLRoundResponse.model_validate(fl_round)
 
 
@@ -85,17 +88,15 @@ async def get_all_rounds(
 ):
     """
     Get all FL rounds with pagination
-    
+
     Query Parameters:
     - limit: Number of rounds to return (default: 10)
     - offset: Number of rounds to skip (default: 0)
     """
     repo = FLRepository(db)
     rounds = await repo.get_all_rounds(limit=limit, offset=offset)
-    
-    return {
-        "rounds": [FLRoundResponse.model_validate(r) for r in rounds]
-    }
+
+    return {"rounds": [FLRoundResponse.model_validate(r) for r in rounds]}
 
 
 @router.get("/rounds/{round_id}", response_model=FLRoundResponse)
@@ -105,19 +106,18 @@ async def get_round_by_id(
 ):
     """
     Get a specific FL round by ID
-    
+
     Path Parameters:
     - round_id: ID of the FL round
     """
     repo = FLRepository(db)
     fl_round = await repo.get_by_id(round_id)
-    
+
     if not fl_round:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"FL round with id {round_id} not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"FL round with id {round_id} not found"
         )
-    
+
     return FLRoundResponse.model_validate(fl_round)
 
 
@@ -129,27 +129,22 @@ async def update_round_progress(
 ):
     """
     Update FL round progress
-    
+
     Path Parameters:
     - round_id: ID of the FL round
-    
+
     Body:
     - progress: Progress percentage (0-100)
     - phase: Optional phase (distributing, training, aggregating, complete)
     """
     repo = FLRepository(db)
-    fl_round = await repo.update_round_progress(
-        round_id,
-        update_data.progress,
-        update_data.phase
-    )
-    
+    fl_round = await repo.update_round_progress(round_id, update_data.progress, update_data.phase)
+
     if not fl_round:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"FL round with id {round_id} not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"FL round with id {round_id} not found"
         )
-    
+
     return FLRoundResponse.model_validate(fl_round)
 
 
@@ -161,22 +156,21 @@ async def complete_round(
 ):
     """
     Mark FL round as completed
-    
+
     Path Parameters:
     - round_id: ID of the FL round
-    
+
     Body:
     - model_accuracy: Final model accuracy
     """
     repo = FLRepository(db)
     fl_round = await repo.complete_round(round_id, complete_data.model_accuracy)
-    
+
     if not fl_round:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"FL round with id {round_id} not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"FL round with id {round_id} not found"
         )
-    
+
     return FLRoundResponse.model_validate(fl_round)
 
 
@@ -186,12 +180,12 @@ async def get_all_clients(
 ):
     """
     Get all FL clients from the current round
-    
+
     Returns list of all facility clients with their current status
     """
     repo = FLRepository(db)
     clients = await repo.get_all_clients()
-    
+
     return [FLClientSchema.model_validate(client) for client in clients]
 
 
@@ -202,19 +196,18 @@ async def get_client_by_id(
 ):
     """
     Get a specific FL client by ID
-    
+
     Path Parameters:
     - client_id: UUID of the FL client
     """
     repo = FLRepository(db)
     client = await repo.get_client_by_id(client_id)
-    
+
     if not client:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"FL client with id {client_id} not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"FL client with id {client_id} not found"
         )
-    
+
     return FLClientSchema.model_validate(client)
 
 
@@ -226,10 +219,10 @@ async def update_client_status(
 ):
     """
     Update FL client status and progress
-    
+
     Path Parameters:
     - client_id: UUID of the FL client
-    
+
     Body:
     - status: Optional client status (active, delayed, offline)
     - progress: Optional progress percentage (0-100)
@@ -246,13 +239,12 @@ async def update_client_status(
         loss=update_data.loss,
         accuracy=update_data.accuracy,
     )
-    
+
     if not client:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"FL client with id {client_id} not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"FL client with id {client_id} not found"
         )
-    
+
     return FLClientSchema.model_validate(client)
 
 
@@ -262,7 +254,7 @@ async def get_privacy_metrics(
 ):
     """
     Get privacy metrics for federated learning
-    
+
     Returns differential privacy parameters and encryption info
     """
     # For now, return static values

@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Literal
 from datetime import datetime
+from typing import Dict, List, Literal, Optional
 from uuid import UUID
+
+from pydantic import BaseModel
 
 
 class AlertSourceSchema(BaseModel):

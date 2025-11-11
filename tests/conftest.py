@@ -35,15 +35,24 @@ test_engine = create_async_engine(
 @pytest.fixture(scope="function", autouse=True)
 async def setup_database():
     """Set up database tables before each test"""
-    # Import models to ensure they're registered
-    from app.models import Alert, AlertSource, FLRound, FLClient, Prediction, PredictedTechnique, NetworkData
-    
+    # Import models to ensure they're registered (needed for SQLAlchemy metadata)
+    # flake8: noqa: F401
+    from app.models import (
+        Alert,
+        AlertSource,
+        FLClient,
+        FLRound,
+        NetworkData,
+        PredictedTechnique,
+        Prediction,
+    )
+
     # Create tables
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     yield
-    
+
     # Drop tables after test
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

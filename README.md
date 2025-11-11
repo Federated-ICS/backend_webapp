@@ -1,30 +1,60 @@
 # ICS Threat Detection System - Backend
 
-FastAPI backend for the Federated Network-Based ICS Threat Detection System.
+FastAPI backend for the Federated Network-Based ICS Threat Detection System. A multi-layered threat detection platform using federated learning, LSTM autoencoders, and graph neural networks to detect and predict ICS/OT network attacks.
+
+## Overview
+
+This system provides real-time threat detection and prediction for Industrial Control Systems (ICS) and Operational Technology (OT) networks using a three-layer detection architecture:
+
+**Layer 1: Anomaly Detection**
+- LSTM Autoencoder for temporal pattern analysis (60-second context windows)
+- Isolation Forest for statistical anomaly detection
+
+**Layer 2: Threat Classification**
+- Multi-class classifier for MITRE ATT&CK technique identification
+- Context-aware analysis using Redis buffer
+
+**Layer 3: Attack Prediction**
+- Graph Neural Network (GNN) for predicting next attack steps
+- Neo4j-based MITRE ATT&CK knowledge graph
+
+**Federated Learning**
+- Privacy-preserving model training across multiple facilities
+- Differential privacy with ε=0.5, δ=10⁻⁵
+- Secure aggregation without sharing raw data
 
 ## Quick Start
 
 ```bash
-# 1. Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# 1. Install dependencies (using Poetry)
+poetry install
 
-# 2. Install dependencies
-pip install -r requirements.txt
-
-# 3. Set up environment variables
+# 2. Set up environment variables
 cp .env.example .env
 # Edit .env with your configuration
 
-# 4. Run the server
-uvicorn app.main:app --reload --port 8000
+# 3. Start PostgreSQL
+docker-compose up -d postgres
+
+# 4. Run database migrations
+poetry run alembic upgrade head
+
+# 5. Seed database with sample data
+poetry run python scripts/seed_database.py
+
+# 6. Start the server
+poetry run uvicorn app.main:app --reload --port 8000
 ```
 
 Visit http://localhost:8000/docs for interactive API documentation.
 
-## Full Setup Guide
+## Documentation
 
-See [SETUP.md](SETUP.md) for detailed installation and configuration instructions.
+- [Quick Start Guide](docs/QUICK_START.md) - Get up and running fast
+- [Architecture](docs/ARCHITECTURE.md) - System design and data flows
+- [Docker Setup](docs/DOCKER_SETUP.md) - Infrastructure services
+- [Progress](docs/PROGRESS.md) - Implementation status
+- [TDD Status](docs/TDD_STATUS.md) - Test-driven development progress
 
 ## Project Structure
 
@@ -32,89 +62,288 @@ See [SETUP.md](SETUP.md) for detailed installation and configuration instruction
 backend/
 ├── app/
 │   ├── main.py              # FastAPI application entry point
-│   ├── config.py            # Configuration management
-│   ├── database.py          # Database connection
-│   ├── models/              # SQLAlchemy models
-│   ├── schemas/             # Pydantic schemas
-│   ├── api/                 # API routes
-│   │   ├── alerts.py
+│   ├── config.py            # Configuration management (Pydantic Settings)
+│   ├── database.py          # Async SQLAlchemy setup
+│   ├── models/              # SQLAlchemy ORM models
+│   │   ├── alert.py         # Alert and AlertSource models
+│   │   ├── fl_round.py      # FLRound and FLClient models
+│   │   ├── prediction.py    # Prediction and PredictedTechnique models
+│   │   └── network_data.py  # NetworkData model
+│   ├── schemas/             # Pydantic validation schemas
+│   │   ├── alert.py
 │   │   ├── fl_status.py
-│   │   ├── predictions.py
-│   │   └── demo.py
-│   ├── services/            # Business logic
-│   │   ├── kafka_consumer.py
-│   │   ├── websocket_manager.py
-│   │   └── context_buffer.py
-│   └── utils/               # Utility functions
-├── scripts/                 # Setup and utility scripts
-├── tests/                   # Test files
+│   │   └── prediction.py
+│   ├── repositories/        # Data access layer
+│   │   ├── alert_repository.py
+│   │   ├── fl_repository.py
+│   │   └── prediction_repository.py
+│   └── api/                 # API route handlers
+│       ├── alerts.py        # Alert management endpoints
+│       ├── fl_status.py     # Federated learning endpoints
+│       └── predictions.py   # Attack prediction endpoints
+├── scripts/                 # Utility scripts
+│   ├── seed_database.py     # Populate with sample data
+│   ├── test_repositories.py # Test data access layer
+│   ├── clear_database.py    # Reset database
+│   └── setup_postgres.sh    # PostgreSQL setup script
+├── tests/                   # Test suite
+│   ├── conftest.py          # Pytest fixtures
+│   └── test_api/            # API endpoint tests
 ├── alembic/                 # Database migrations
-├── requirements.txt         # Python dependencies
-├── .env.example            # Environment variables template
-└── README.md               # This file
+│   └── versions/            # Migration files
+├── docs/                    # Documentation
+├── pyproject.toml           # Poetry dependencies
+├── docker-compose.yml       # Infrastructure services
+└── .env.example            # Environment variables template
 ```
 
 ## API Endpoints
 
-### Health Check
+### Health & Info
+- `GET /` - API information
 - `GET /health` - System health status
 
-### Alerts
-- `GET /api/alerts` - List all alerts
-- `GET /api/alerts/{id}` - Get alert details
+### Alerts (`/api/alerts`)
+- `GET /api/alerts` - List alerts with filtering and pagination
+  - Query params: `severity`, `facility`, `status_filter`, `search`, `time_range`, `page`, `limit`
+- `POST /api/alerts` - Create new alert
+- `GET /api/alerts/stats` - Get alert statistics
+- `GET /api/alerts/{id}` - Get alert by ID
 - `PUT /api/alerts/{id}/status` - Update alert status
 
-### Federated Learning
+### Federated Learning (`/api/fl`)
+- `GET /api/fl/rounds/current` - Get current active FL round
 - `POST /api/fl/rounds/trigger` - Start new FL round
-- `GET /api/fl/rounds` - List FL rounds
-- `GET /api/fl/clients` - Get client status
+- `GET /api/fl/rounds` - List all FL rounds
+- `GET /api/fl/rounds/{id}` - Get FL round by ID
+- `PUT /api/fl/rounds/{id}/progress` - Update round progress
+- `POST /api/fl/rounds/{id}/complete` - Complete FL round
+- `GET /api/fl/clients` - List all FL clients
+- `GET /api/fl/clients/{id}` - Get FL client by ID
+- `PUT /api/fl/clients/{id}` - Update client status
+- `GET /api/fl/privacy-metrics` - Get privacy metrics
 
-### Attack Predictions
-- `GET /api/predictions` - List predictions
-- `POST /api/predictions/predict` - Generate prediction
+### Attack Predictions (`/api/predictions`)
+- `GET /api/predictions` - List predictions with filtering
+  - Query params: `limit`, `offset`, `validated`
+- `POST /api/predictions` - Create new prediction
+- `GET /api/predictions/latest` - Get most recent prediction
+- `GET /api/predictions/{id}` - Get prediction by ID
+- `POST /api/predictions/{id}/validate` - Mark prediction as validated
 
-### Demo
-- `POST /api/demo/scenarios/{scenario}` - Trigger demo scenario
-- `GET /api/demo/status` - Get demo status
-
-### WebSocket
-- `WS /ws` - Real-time updates
+Interactive API documentation available at http://localhost:8000/docs
 
 ## Development
 
 ### Running Tests
 ```bash
-pytest
-pytest --cov=app tests/
+# Run all tests
+poetry run pytest
+
+# Run with coverage
+poetry run pytest --cov=app tests/
+
+# Run specific test file
+poetry run pytest tests/test_api/test_alerts.py -v
+
+# Run API tests
+poetry run pytest tests/test_api/ -v
 ```
 
-### Database Migrations
+### Database Management
 ```bash
-alembic revision --autogenerate -m "Description"
-alembic upgrade head
+# Create new migration
+poetry run alembic revision --autogenerate -m "Description"
+
+# Apply migrations
+poetry run alembic upgrade head
+
+# Rollback migration
+poetry run alembic downgrade -1
+
+# Seed database with sample data
+poetry run python scripts/seed_database.py
+
+# Clear database
+poetry run python scripts/clear_database.py
+
+# Test repositories
+poetry run python scripts/test_repositories.py
 ```
 
-### Code Formatting
+### Code Quality
 ```bash
-black app/
-isort app/
+# Format code
+poetry run black app/
+poetry run isort app/
+
+# Type checking
+poetry run mypy app/
+
+# Linting
+poetry run flake8 app/
 ```
 
-## Documentation
+### Docker Services
+```bash
+# Start all infrastructure services
+docker-compose up -d
 
-- [Setup Guide](SETUP.md) - Detailed installation instructions
-- [API Documentation](http://localhost:8000/docs) - Interactive API docs (when running)
-- [Architecture](../Idea_and_architecture/docs/network-focused-architecture.md) - System architecture
+# Start specific service
+docker-compose up -d postgres redis
+
+# View logs
+docker-compose logs -f postgres
+
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes
+docker-compose down -v
+```
 
 ## Tech Stack
 
-- **FastAPI** - Modern async web framework
-- **SQLAlchemy** - Database ORM
-- **Pydantic** - Data validation
-- **PostgreSQL** - Primary database
-- **Redis** - Context buffer storage
-- **Kafka** - Event streaming
-- **Neo4j** - Graph database for MITRE ATT&CK
+### Core Framework
+- **FastAPI** 0.104+ - Modern async web framework with automatic OpenAPI docs
+- **Python** 3.11+ - Type hints and async/await support
+- **Poetry** - Dependency management and packaging
+
+### Database & ORM
+- **PostgreSQL** 15 - Primary relational database
+- **SQLAlchemy** 2.0+ - Async ORM with declarative models
+- **Alembic** - Database migrations
+- **asyncpg** - High-performance async PostgreSQL driver
+
+### Data Validation
+- **Pydantic** 2.5+ - Data validation and settings management
+- **Pydantic Settings** - Environment variable management
+
+### Infrastructure Services
+- **Redis** 7 - Context buffer for 60-second rolling windows
+- **Apache Kafka** - Event streaming and message bus
+- **Neo4j** 5.14 - Graph database for MITRE ATT&CK relationships
+- **Zookeeper** - Kafka coordination
+
+### Development Tools
+- **pytest** - Testing framework with async support
+- **pytest-asyncio** - Async test support
+- **httpx** - Async HTTP client for testing
+- **black** - Code formatting
+- **isort** - Import sorting
+- **mypy** - Static type checking
+- **flake8** - Linting
+
+## Features
+
+✅ **Implemented**
+- RESTful API with FastAPI
+- Async database operations with SQLAlchemy
+- Repository pattern for data access
+- Alert management with filtering and search
+- Federated learning round tracking
+- Attack prediction storage
+- Database migrations with Alembic
+- Comprehensive test suite
+- Docker Compose infrastructure
+- Sample data seeding
+
+🚧 **In Progress**
+- WebSocket support for real-time updates
+- Kafka consumer integration
+- Redis context buffer service
+- Neo4j graph queries
+
+📋 **Planned**
+- Authentication and authorization
+- Rate limiting
+- Caching layer
+- Background task processing
+- Monitoring and logging
+- Production deployment configs
+
+## Environment Variables
+
+Create a `.env` file from `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Key configuration options:
+
+```bash
+# Database
+DATABASE_URL=postgresql+asyncpg://ics_user:ics_password@localhost:5432/ics_threat_detection
+
+# Redis (Context Buffer)
+REDIS_URL=redis://localhost:6379/0
+
+# Kafka (Event Streaming)
+KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+
+# Neo4j (MITRE ATT&CK Graph)
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=neo4j_password
+
+# CORS (Frontend URLs)
+CORS_ORIGINS=["http://localhost:3000"]
+
+# Security
+SECRET_KEY=your-secret-key-change-in-production
+
+# Demo Mode
+DEMO_MODE=true
+SEED_DATA_ON_STARTUP=false
+```
+
+## Troubleshooting
+
+### Port 8000 already in use
+```bash
+# Find process using port 8000
+lsof -i :8000
+
+# Kill the process
+kill -9 <PID>
+```
+
+### Database connection error
+```bash
+# Check PostgreSQL is running
+docker-compose ps postgres
+
+# View PostgreSQL logs
+docker-compose logs postgres
+
+# Restart PostgreSQL
+docker-compose restart postgres
+```
+
+### Migration errors
+```bash
+# Check current migration version
+poetry run alembic current
+
+# Reset database (⚠️ deletes all data)
+docker-compose down -v postgres
+docker-compose up -d postgres
+sleep 5
+poetry run alembic upgrade head
+poetry run python scripts/seed_database.py
+```
+
+### Poetry dependency issues
+```bash
+# Clear cache and reinstall
+poetry cache clear pypi --all
+poetry install --no-cache
+```
+
+## Contributing
+
+This project follows Test-Driven Development (TDD). See [TDD_STATUS.md](docs/TDD_STATUS.md) for current test coverage and implementation status.
 
 ## License
 

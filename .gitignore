@@ -128,3 +128,5 @@ neo4j_data/
 # Local data directories
 data/
 local_data/
+
+.kiro

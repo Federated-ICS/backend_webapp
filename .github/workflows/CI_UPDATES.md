@@ -1,6 +1,32 @@
-# CI Pipeline Updates - Phase 2D
+# CI Pipeline Updates - Phase 2D & Phase 3
 
-## Changes Made
+## Latest Updates (Phase 3 - WebSocket)
+
+### Test Count Increased
+- **Previous**: 40 backend tests
+- **Current**: 65 backend tests (+25 WebSocket tests)
+- **Coverage**: 82% overall
+
+### New Test Suites
+1. **WebSocket Connection Manager** (6 tests)
+   - Connection/disconnection
+   - Room management
+   - Broadcasting
+
+2. **WebSocket Endpoint** (9 tests)
+   - Endpoint functionality
+   - Subscriptions
+   - Multiple clients
+
+3. **Event Emitters** (8 tests)
+   - Alert events
+   - FL progress events
+   - Attack detection events
+
+4. **API Integration** (2 tests)
+   - Alerts API WebSocket integration
+
+## Changes Made (Phase 2D)
 
 ### Added Neo4j Service
 - **Image**: `neo4j:5.14`
@@ -37,8 +63,9 @@
 The CI pipeline now tests:
 - ✅ PostgreSQL-based APIs (Alerts, FL Status, Predictions)
 - ✅ Neo4j-based APIs (MITRE ATT&CK Graph)
-- ✅ All 40 backend tests
-- ✅ Code coverage reporting
+- ✅ WebSocket Infrastructure (Connection Manager, Endpoint, Events)
+- ✅ All 65 backend tests (+25 WebSocket tests)
+- ✅ Code coverage reporting (82%)
 - ✅ Linting (Black, isort, flake8)
 - ✅ Type checking (mypy)
 
@@ -73,8 +100,8 @@ Estimated CI pipeline duration:
 - Service startup: ~30 seconds
 - Dependency installation: ~1 minute (cached)
 - Data import: ~10 seconds
-- Test execution: ~20 seconds
-- **Total**: ~2 minutes
+- Test execution: ~30 seconds (65 tests including WebSocket)
+- **Total**: ~2.5 minutes
 
 ## Troubleshooting
 
@@ -92,6 +119,18 @@ If MITRE data import fails:
 3. Ensure Neo4j is ready before import
 4. Verify Python script has correct permissions
 
+## WebSocket Testing in CI
+
+### Test Categories
+1. **Unit Tests**: Connection manager, event emitters
+2. **Integration Tests**: WebSocket endpoint, API integration
+3. **Concurrent Tests**: Multiple client connections
+
+### No Additional Services Required
+- WebSocket tests use in-memory connections
+- No external WebSocket server needed
+- Fast and reliable testing
+
 ## Future Enhancements
 
 1. **Cache MITRE Data**
@@ -105,12 +144,19 @@ If MITRE data import fails:
 3. **Integration Tests**
    - Add end-to-end API tests
    - Test full attack graph workflows
+   - WebSocket event flow testing
 
 4. **Performance Tests**
    - Add graph query performance benchmarks
    - Monitor Neo4j query times
+   - WebSocket connection load testing
+
+5. **Frontend Tests**
+   - Add frontend WebSocket integration tests
+   - Test real-time UI updates
 
 ---
 
-**Updated**: November 11, 2025
+**Updated**: November 12, 2025
 **Status**: ✅ Ready for Production
+**Test Count**: 65 backend tests (100% passing)

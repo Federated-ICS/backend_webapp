@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.events.emitter import emit_alert_created, emit_alert_updated
 from app.repositories.alert_repository import AlertRepository
 from app.schemas.alert import AlertCreate, AlertResponse, AlertStats, AlertUpdate
 
@@ -81,7 +82,12 @@ async def create_alert(
     """
     repo = AlertRepository(db)
     alert = await repo.create(alert_data)
-    return AlertResponse.model_validate(alert)
+
+    # Emit WebSocket event
+    alert_response = AlertResponse.model_validate(alert)
+    await emit_alert_created(alert_response.model_dump())
+
+    return alert_response
 
 
 @router.get("/stats", response_model=AlertStats)
@@ -147,4 +153,8 @@ async def update_alert_status(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Alert with id {alert_id} not found"
         )
 
-    return AlertResponse.model_validate(alert)
+    # Emit WebSocket event
+    alert_response = AlertResponse.model_validate(alert)
+    await emit_alert_updated(alert_response.model_dump())
+
+    return alert_response

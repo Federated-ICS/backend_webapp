@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import alerts, fl_status, mitre, predictions
+from app.api import alerts, fl_status, mitre, predictions, websocket
 from app.config import settings
 
 
@@ -59,3 +59,4 @@ app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"])
 app.include_router(fl_status.router, prefix="/api/fl", tags=["fl"])
 app.include_router(predictions.router, prefix="/api/predictions", tags=["predictions"])
 app.include_router(mitre.router)
+app.include_router(websocket.router, tags=["websocket"])

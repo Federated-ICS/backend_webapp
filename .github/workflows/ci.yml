@@ -24,6 +24,20 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      
+      neo4j:
+        image: neo4j:5.14
+        env:
+          NEO4J_AUTH: neo4j/neo4j_password
+          NEO4J_PLUGINS: '["apoc"]'
+        ports:
+          - 7474:7474
+          - 7687:7687
+        options: >-
+          --health-cmd "cypher-shell -u neo4j -p neo4j_password 'RETURN 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     
     steps:
     - name: Checkout code
@@ -62,6 +76,26 @@ jobs:
           sleep 2
         done
     
+    - name: Wait for Neo4j
+      run: |
+        until curl -s http://localhost:7474 > /dev/null; do
+          echo "Waiting for Neo4j..."
+          sleep 2
+        done
+        echo "Neo4j is ready"
+    
+    - name: Download ICS ATT&CK data
+      run: |
+        mkdir -p data
+        curl -o data/ics-attack.json https://raw.githubusercontent.com/mitre/cti/master/ics-attack/ics-attack.json
+    
+    - name: Import MITRE ATT&CK data
+      env:
+        NEO4J_URI: bolt://localhost:7687
+        NEO4J_USER: neo4j
+        NEO4J_PASSWORD: neo4j_password
+      run: poetry run python scripts/import_mitre_data.py
+    
     - name: Run database migrations
       env:
         DATABASE_URL: postgresql+asyncpg://ics_user:ics_password@localhost:5432/ics_threat_detection_test
@@ -70,6 +104,9 @@ jobs:
     - name: Run tests
       env:
         DATABASE_URL: postgresql+asyncpg://ics_user:ics_password@localhost:5432/ics_threat_detection_test
+        NEO4J_URI: bolt://localhost:7687
+        NEO4J_USER: neo4j
+        NEO4J_PASSWORD: neo4j_password
       run: poetry run pytest tests/ -v --cov=app --cov-report=xml --cov-report=term
     
     - name: Upload coverage to Codecov

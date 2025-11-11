@@ -3,7 +3,7 @@
 [![CI Pipeline](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/ci.yml)
 [![Quick Check](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/quick-check.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/quick-check.yml)
 [![Security Scan](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/security.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/security.yml)
-[![codecov](https://codecov.io/gh/YOUR_USERNAME/YOUR_REPO/branch/main/graph/badge.svg)](https://codecov.io/gh/YOUR_USERNAME/YOUR_REPO)
+[![codecov](https://codecov.io/gh/YOUR_USERNAME/YOUR_REPO/branch/master/graph/badge.svg)](https://codecov.io/gh/YOUR_USERNAME/YOUR_REPO)
 
 FastAPI backend for the Federated Network-Based ICS Threat Detection System. A multi-layered threat detection platform using federated learning, LSTM autoencoders, and graph neural networks to detect and predict ICS/OT network attacks.
 

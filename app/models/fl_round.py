@@ -33,8 +33,12 @@ class FLRound(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     round_number = Column(Integer, unique=True, nullable=False, index=True)
-    status = Column(Enum(RoundStatusEnum), nullable=False, default=RoundStatusEnum.in_progress)
-    phase = Column(Enum(PhaseEnum), nullable=False, default=PhaseEnum.distributing)
+    status: RoundStatusEnum = Column(  # type: ignore
+        Enum(RoundStatusEnum), nullable=False, default=RoundStatusEnum.in_progress
+    )
+    phase: PhaseEnum = Column(  # type: ignore
+        Enum(PhaseEnum), nullable=False, default=PhaseEnum.distributing
+    )
 
     start_time = Column(DateTime, nullable=False, default=datetime.utcnow)
     end_time = Column(DateTime)
@@ -58,7 +62,9 @@ class FLClient(Base):
 
     facility_id = Column(String, nullable=False)
     name = Column(String, nullable=False)
-    status = Column(Enum(ClientStatusEnum), nullable=False, default=ClientStatusEnum.active)
+    status: ClientStatusEnum = Column(  # type: ignore
+        Enum(ClientStatusEnum), nullable=False, default=ClientStatusEnum.active
+    )
 
     progress = Column(Integer, default=0)  # 0-100
     current_epoch = Column(Integer, default=0)

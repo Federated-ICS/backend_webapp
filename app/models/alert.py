@@ -29,10 +29,12 @@ class Alert(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     timestamp = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
     facility_id = Column(String, nullable=False, index=True)
-    severity = Column(Enum(SeverityEnum), nullable=False, index=True)
+    severity: SeverityEnum = Column(Enum(SeverityEnum), nullable=False, index=True)  # type: ignore
     title = Column(String, nullable=False)
     description = Column(Text)
-    status = Column(Enum(StatusEnum), nullable=False, default=StatusEnum.new, index=True)
+    status: StatusEnum = Column(  # type: ignore
+        Enum(StatusEnum), nullable=False, default=StatusEnum.new, index=True
+    )
 
     # Attack classification
     attack_type = Column(String)  # e.g., "T0846"

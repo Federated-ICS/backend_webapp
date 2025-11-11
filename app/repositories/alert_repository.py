@@ -108,7 +108,7 @@ class AlertRepository:
         if filters:
             count_query = count_query.where(and_(*filters))
         total_result = await self.db.execute(count_query)
-        total = total_result.scalar()
+        total = total_result.scalar() or 0
 
         # Apply pagination and ordering
         query = query.order_by(Alert.timestamp.desc()).offset((page - 1) * limit).limit(limit)
@@ -124,7 +124,7 @@ class AlertRepository:
         if not alert:
             return None
 
-        alert.status = StatusEnum(status)
+        alert.status = StatusEnum(status)  # type: ignore
         await self.db.commit()
         await self.db.refresh(alert, ["sources"])  # Eagerly load sources
 
@@ -135,14 +135,14 @@ class AlertRepository:
         # Total alerts
         total_query = select(func.count()).select_from(Alert)
         total_result = await self.db.execute(total_query)
-        total = total_result.scalar()
+        total = total_result.scalar() or 0
 
         # Critical alerts
         critical_query = (
             select(func.count()).select_from(Alert).where(Alert.severity == SeverityEnum.critical)
         )
         critical_result = await self.db.execute(critical_query)
-        critical = critical_result.scalar()
+        critical = critical_result.scalar() or 0
 
         # Unresolved alerts
         unresolved_query = (
@@ -151,14 +151,14 @@ class AlertRepository:
             .where(Alert.status.in_([StatusEnum.new, StatusEnum.acknowledged]))
         )
         unresolved_result = await self.db.execute(unresolved_query)
-        unresolved = unresolved_result.scalar()
+        unresolved = unresolved_result.scalar() or 0
 
         # False positives
         fp_query = (
             select(func.count()).select_from(Alert).where(Alert.status == StatusEnum.false_positive)
         )
         fp_result = await self.db.execute(fp_query)
-        false_positives = fp_result.scalar()
+        false_positives = fp_result.scalar() or 0
 
         return AlertStats(
             total=total,

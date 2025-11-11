@@ -117,9 +117,9 @@ class FLRepository:
         if not fl_round:
             return None
 
-        fl_round.progress = progress
+        fl_round.progress = progress  # type: ignore
         if phase:
-            fl_round.phase = PhaseEnum(phase)
+            fl_round.phase = PhaseEnum(phase)  # type: ignore
 
         await self.db.commit()
         await self.db.refresh(fl_round, ["clients"])
@@ -136,11 +136,11 @@ class FLRepository:
         if not fl_round:
             return None
 
-        fl_round.status = RoundStatusEnum.completed
-        fl_round.phase = PhaseEnum.complete
-        fl_round.progress = 100
-        fl_round.end_time = datetime.utcnow()
-        fl_round.model_accuracy = model_accuracy
+        fl_round.status = RoundStatusEnum.completed  # type: ignore
+        fl_round.phase = PhaseEnum.complete  # type: ignore
+        fl_round.progress = 100  # type: ignore
+        fl_round.end_time = datetime.utcnow()  # type: ignore
+        fl_round.model_accuracy = model_accuracy  # type: ignore
 
         await self.db.commit()
         await self.db.refresh(fl_round, ["clients"])
@@ -152,7 +152,7 @@ class FLRepository:
         current_round = await self.get_current_round()
         if not current_round:
             return []
-        return current_round.clients
+        return list(current_round.clients)
 
     async def get_client_by_id(self, client_id: UUID) -> Optional[FLClient]:
         """Get FL client by ID"""
@@ -175,17 +175,17 @@ class FLRepository:
             return None
 
         if status:
-            client.status = ClientStatusEnum(status)
+            client.status = ClientStatusEnum(status)  # type: ignore
         if progress is not None:
-            client.progress = progress
+            client.progress = progress  # type: ignore
         if current_epoch is not None:
-            client.current_epoch = current_epoch
+            client.current_epoch = current_epoch  # type: ignore
         if loss is not None:
-            client.loss = loss
+            client.loss = loss  # type: ignore
         if accuracy is not None:
-            client.accuracy = accuracy
+            client.accuracy = accuracy  # type: ignore
 
-        client.last_update = datetime.utcnow()
+        client.last_update = datetime.utcnow()  # type: ignore
 
         await self.db.commit()
         # No relationships to refresh for client

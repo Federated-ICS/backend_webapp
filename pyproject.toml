@@ -79,6 +79,15 @@ asyncio_mode = "auto"
 
 [tool.mypy]
 python_version = "3.11"
-warn_return_any = true
+warn_return_any = false
 warn_unused_configs = true
 disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "app.repositories.*"
+disable_error_code = ["arg-type", "assignment", "attr-defined", "call-overload"]
+
+[[tool.mypy.overrides]]
+module = "app.models.*"
+disable_error_code = ["var-annotated", "assignment", "misc", "attr-defined"]

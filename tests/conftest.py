@@ -1,19 +1,21 @@
 """
 Pytest configuration and fixtures
 """
-import pytest
 import asyncio
 from typing import AsyncGenerator
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+
+import pytest
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
-from app.main import app
 from app.database import Base, get_db
-
+from app.main import app
 
 # Test database URL (PostgreSQL test database)
-TEST_DATABASE_URL = "postgresql+asyncpg://ics_user:ics_password@localhost:5432/ics_threat_detection_test"
+TEST_DATABASE_URL = (
+    "postgresql+asyncpg://ics_user:ics_password@localhost:5432/ics_threat_detection_test"
+)
 
 
 @pytest.fixture(scope="session")
@@ -67,7 +69,7 @@ async def test_db() -> AsyncGenerator[AsyncSession, None]:
         class_=AsyncSession,
         expire_on_commit=False,
     )
-    
+
     async with async_session() as session:
         try:
             yield session
@@ -80,14 +82,14 @@ async def test_db() -> AsyncGenerator[AsyncSession, None]:
 @pytest.fixture
 async def client(test_db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """Create a test client with test database"""
-    
+
     async def override_get_db():
         yield test_db
-    
+
     app.dependency_overrides[get_db] = override_get_db
-    
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
-    
+
     app.dependency_overrides.clear()

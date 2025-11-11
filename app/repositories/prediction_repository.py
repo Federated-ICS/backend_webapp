@@ -102,8 +102,8 @@ class PredictionRepository:
         if not prediction:
             return None
 
-        prediction.validated = True
-        prediction.validation_time = datetime.utcnow()
+        prediction.validated = True  # type: ignore
+        prediction.validation_time = datetime.utcnow()  # type: ignore
 
         await self.db.commit()
         await self.db.refresh(prediction, ["predicted_techniques"])

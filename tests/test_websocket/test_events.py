@@ -12,7 +12,7 @@ class TestEventEmitter:
 
     @pytest.mark.asyncio
     async def test_emit_alert_created_event(self):
-        """Test that alert_created event is emitted"""
+        """Test that alert_created event is emitted to alerts AND dashboard rooms"""
         from app.events.emitter import emit_alert_created
 
         alert_data = {
@@ -27,16 +27,24 @@ class TestEventEmitter:
 
             await emit_alert_created(alert_data)
 
-            # Verify broadcast was called with correct room and data
-            mock_manager.broadcast_to_room.assert_called_once()
-            call_args = mock_manager.broadcast_to_room.call_args
-            assert call_args[0][0] == "alerts"  # Room name
-            assert call_args[0][1]["type"] == "alert_created"
-            assert call_args[0][1]["data"] == alert_data
+            # Verify broadcast was called TWICE (alerts + dashboard)
+            assert mock_manager.broadcast_to_room.call_count == 2
+
+            # Check first call (alerts room)
+            first_call = mock_manager.broadcast_to_room.call_args_list[0]
+            assert first_call[0][0] == "alerts"
+            assert first_call[0][1]["type"] == "alert_created"
+            assert first_call[0][1]["data"] == alert_data
+
+            # Check second call (dashboard room)
+            second_call = mock_manager.broadcast_to_room.call_args_list[1]
+            assert second_call[0][0] == "dashboard"
+            assert second_call[0][1]["type"] == "alert_created"
+            assert second_call[0][1]["data"] == alert_data
 
     @pytest.mark.asyncio
     async def test_emit_alert_updated_event(self):
-        """Test that alert_updated event is emitted"""
+        """Test that alert_updated event is emitted to alerts AND dashboard rooms"""
         from app.events.emitter import emit_alert_updated
 
         alert_data = {
@@ -49,14 +57,22 @@ class TestEventEmitter:
 
             await emit_alert_updated(alert_data)
 
-            mock_manager.broadcast_to_room.assert_called_once()
-            call_args = mock_manager.broadcast_to_room.call_args
-            assert call_args[0][0] == "alerts"
-            assert call_args[0][1]["type"] == "alert_updated"
+            # Verify broadcast was called TWICE (alerts + dashboard)
+            assert mock_manager.broadcast_to_room.call_count == 2
+
+            # Check first call (alerts room)
+            first_call = mock_manager.broadcast_to_room.call_args_list[0]
+            assert first_call[0][0] == "alerts"
+            assert first_call[0][1]["type"] == "alert_updated"
+
+            # Check second call (dashboard room)
+            second_call = mock_manager.broadcast_to_room.call_args_list[1]
+            assert second_call[0][0] == "dashboard"
+            assert second_call[0][1]["type"] == "alert_updated"
 
     @pytest.mark.asyncio
     async def test_emit_fl_progress_event(self):
-        """Test that fl_progress event is emitted"""
+        """Test that fl_progress event is emitted to fl-status AND dashboard rooms"""
         from app.events.emitter import emit_fl_progress
 
         progress_data = {
@@ -70,14 +86,22 @@ class TestEventEmitter:
 
             await emit_fl_progress(progress_data)
 
-            mock_manager.broadcast_to_room.assert_called_once()
-            call_args = mock_manager.broadcast_to_room.call_args
-            assert call_args[0][0] == "fl-status"
-            assert call_args[0][1]["type"] == "fl_progress"
+            # Verify broadcast was called TWICE (fl-status + dashboard)
+            assert mock_manager.broadcast_to_room.call_count == 2
+
+            # Check first call (fl-status room)
+            first_call = mock_manager.broadcast_to_room.call_args_list[0]
+            assert first_call[0][0] == "fl-status"
+            assert first_call[0][1]["type"] == "fl_progress"
+
+            # Check second call (dashboard room)
+            second_call = mock_manager.broadcast_to_room.call_args_list[1]
+            assert second_call[0][0] == "dashboard"
+            assert second_call[0][1]["type"] == "fl_progress"
 
     @pytest.mark.asyncio
     async def test_emit_attack_detected_event(self):
-        """Test that attack_detected event is emitted"""
+        """Test that attack_detected event is emitted to attack-graph AND dashboard rooms"""
         from app.events.emitter import emit_attack_detected
 
         attack_data = {
@@ -91,10 +115,18 @@ class TestEventEmitter:
 
             await emit_attack_detected(attack_data)
 
-            mock_manager.broadcast_to_room.assert_called_once()
-            call_args = mock_manager.broadcast_to_room.call_args
-            assert call_args[0][0] == "attack-graph"
-            assert call_args[0][1]["type"] == "attack_detected"
+            # Verify broadcast was called TWICE (attack-graph + dashboard)
+            assert mock_manager.broadcast_to_room.call_count == 2
+
+            # Check first call (attack-graph room)
+            first_call = mock_manager.broadcast_to_room.call_args_list[0]
+            assert first_call[0][0] == "attack-graph"
+            assert first_call[0][1]["type"] == "attack_detected"
+
+            # Check second call (dashboard room)
+            second_call = mock_manager.broadcast_to_room.call_args_list[1]
+            assert second_call[0][0] == "dashboard"
+            assert second_call[0][1]["type"] == "attack_detected"
 
     @pytest.mark.asyncio
     async def test_emit_dashboard_update_event(self):

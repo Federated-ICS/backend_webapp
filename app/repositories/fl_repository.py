@@ -25,17 +25,13 @@ class FLRepository:
             progress=0,
             epsilon=0.5,
             clients_active=0,
-            total_clients=6,
+            total_clients=2,
         )
 
         # Create clients for each facility
         facilities = [
             ("facility_a", "Facility A"),
             ("facility_b", "Facility B"),
-            ("facility_c", "Facility C"),
-            ("facility_d", "Facility D"),
-            ("facility_e", "Facility E"),
-            ("facility_f", "Facility F"),
         ]
 
         for facility_id, name in facilities:

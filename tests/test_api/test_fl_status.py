@@ -30,7 +30,7 @@ class TestFLStatusAPI:
         assert data["status"] == "in-progress"
         assert data["phase"] == "distributing"
         assert data["progress"] == 0
-        assert len(data["clients"]) == 6  # 6 facilities
+        assert len(data["clients"]) == 2  # 2 facilities
 
     @pytest.mark.asyncio
     async def test_get_current_round_exists(self, client: AsyncClient):
@@ -46,7 +46,7 @@ class TestFLStatusAPI:
         assert data["round_number"] == 1
         assert data["status"] == "in-progress"
         assert "clients" in data
-        assert len(data["clients"]) == 6
+        assert len(data["clients"]) == 2
 
     @pytest.mark.asyncio
     async def test_get_round_by_id(self, client: AsyncClient):
@@ -108,7 +108,7 @@ class TestFLStatusAPI:
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
-        assert len(data) == 6
+        assert len(data) == 2
 
         # Check client structure
         client_data = data[0]

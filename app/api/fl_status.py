@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.events.emitter import emit_fl_progress
 from app.repositories.fl_repository import FLRepository
 from app.schemas.fl_status import FLClientSchema, FLRoundResponse, PrivacyMetrics
 
@@ -145,7 +146,15 @@ async def update_round_progress(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"FL round with id {round_id} not found"
         )
 
-    return FLRoundResponse.model_validate(fl_round)
+    # Emit WebSocket event for real-time update
+    fl_response = FLRoundResponse.model_validate(fl_round)
+
+    # Log before emitting
+    print(f"🔔 Emitting fl_progress event: progress={update_data.progress}%")
+    await emit_fl_progress(fl_response.model_dump())
+    print("✅ Event emitted successfully")
+
+    return fl_response
 
 
 @router.post("/rounds/{round_id}/complete", response_model=FLRoundResponse)
